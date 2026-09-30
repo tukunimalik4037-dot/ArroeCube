@@ -1,0 +1,6 @@
+{
+  "name": "ArrowCube",
+  "description": "A colourful 3D cubical block puzzle game with 100 handcrafted levels, custom level editor, hints, and offline play.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
