@@ -106,6 +106,16 @@ class AdMobManager(private val context: Context) {
         _rewardedVisible.value = true
     }
 
+    /**
+     * Convenience method to show rewarded ad with offline fallback to never block player.
+     */
+    fun showRewarded(onRewarded: () -> Unit) {
+        showRewardedAd(
+            onRewardGranted = onRewarded,
+            onAdUnavailable = { onRewarded() }
+        )
+    }
+
     fun completeRewardedAd() {
         _rewardedVisible.value = false
         rewardedRewardCallback?.invoke()

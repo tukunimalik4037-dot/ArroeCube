@@ -199,13 +199,13 @@ fun LevelCompleteDialog(
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "ADMIN REWARD",
+                                text = "LEVEL STATUS",
                                 color = theme.textSecondary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "ELIGIBLE ★",
+                                text = "CLEARED ★",
                                 color = Color(0xFF16A34A),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Black

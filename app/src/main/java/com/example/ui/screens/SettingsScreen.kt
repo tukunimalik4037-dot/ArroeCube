@@ -296,7 +296,7 @@ fun SettingsScreen(
 
             // Section 5: About / Version
             CubicalCard(
-                backgroundColor = Color(0xFF141724),
+                backgroundColor = theme.surface,
                 borderColor = theme.surfaceBorder,
                 shadowColor = theme.cubeShadow,
                 modifier = Modifier.fillMaxWidth()
@@ -313,7 +313,7 @@ fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Offline-first 3D cubical block puzzle game • 100 Levels",
+                        text = "Offline-first 3D cubical block puzzle game • 1,000 Levels",
                         color = theme.textSecondary,
                         fontSize = 11.sp
                     )

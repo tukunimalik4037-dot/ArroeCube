@@ -14,7 +14,6 @@ class GamePreferences(context: Context) {
         context.getSharedPreferences("arrowcube_prefs", Context.MODE_PRIVATE)
 
     companion object {
-        private const val KEY_PLAYER_ID = "player_id"
         private const val KEY_UNLOCKED_LEVEL = "unlocked_level"
         private const val KEY_SOUND_ENABLED = "sound_enabled"
         private const val KEY_VIBRATION_ENABLED = "vibration_enabled"
@@ -22,26 +21,13 @@ class GamePreferences(context: Context) {
         private const val KEY_THEME = "current_theme"
         private const val KEY_CUSTOM_LEVELS = "custom_levels_json"
         private const val KEY_LEVELS_PLAYED_SINCE_AD = "levels_played_since_ad"
-        private const val KEY_ADMIN_NOTICE = "admin_notice"
-        private const val KEY_ADMIN_PIN = "admin_pin"
-        private const val KEY_ADMIN_REWARDS = "admin_rewards_json"
-        private const val KEY_CUSTOM_CODES = "custom_admin_codes_json"
-        private const val KEY_REDEEMED_CODES = "redeemed_codes_json"
+        private const val KEY_ADS_WATCHED = "ads_watched_count"
+        private const val KEY_LEVEL_SKIPS = "level_skips_available"
+        private const val KEY_UNLOCKED_THEMES_ADS = "unlocked_themes_ads_json"
+        private const val KEY_AD_REWARDS = "ad_rewards_json"
         private const val PREFIX_STAR = "stars_lvl_"
         private const val PREFIX_BEST_MOVES = "best_moves_lvl_"
     }
-
-    var playerId: String
-        get() {
-            var id = prefs.getString(KEY_PLAYER_ID, null)
-            if (id.isNullOrEmpty()) {
-                val rand = (1000..9999).random()
-                id = "AC-$rand"
-                prefs.edit().putString(KEY_PLAYER_ID, id).apply()
-            }
-            return id
-        }
-        set(value) = prefs.edit().putString(KEY_PLAYER_ID, value).apply()
 
     var unlockedLevel: Int
         get() = prefs.getInt(KEY_UNLOCKED_LEVEL, 1)
@@ -74,16 +60,13 @@ class GamePreferences(context: Context) {
         get() = prefs.getInt(KEY_LEVELS_PLAYED_SINCE_AD, 0)
         set(value) = prefs.edit().putInt(KEY_LEVELS_PLAYED_SINCE_AD, value).apply()
 
-    var adminNotice: String
-        get() = prefs.getString(
-            KEY_ADMIN_NOTICE,
-            "Clear levels & share your Player ID with the Admin to claim official rewards!"
-        ) ?: "Clear levels & share your Player ID with the Admin to claim official rewards!"
-        set(value) = prefs.edit().putString(KEY_ADMIN_NOTICE, value).apply()
+    var adsWatchedCount: Int
+        get() = prefs.getInt(KEY_ADS_WATCHED, 0)
+        set(value) = prefs.edit().putInt(KEY_ADS_WATCHED, value).apply()
 
-    var adminPin: String
-        get() = prefs.getString(KEY_ADMIN_PIN, GameConfig.DEFAULT_ADMIN_PIN) ?: GameConfig.DEFAULT_ADMIN_PIN
-        set(value) = prefs.edit().putString(KEY_ADMIN_PIN, value).apply()
+    var levelSkipsAvailable: Int
+        get() = prefs.getInt(KEY_LEVEL_SKIPS, 0)
+        set(value) = prefs.edit().putInt(KEY_LEVEL_SKIPS, value.coerceAtLeast(0)).apply()
 
     fun getTotalStars(): Int {
         var total = 0
@@ -125,26 +108,26 @@ class GamePreferences(context: Context) {
         levelsPlayedSinceAd += 1
     }
 
-    // Admin Rewards System
-    data class AdminReward(
+    // Ad Rewards System (Rewards earned by watching ads)
+    data class AdReward(
         val id: String,
         val title: String,
-        val note: String,
+        val type: String,
         val timestamp: Long = System.currentTimeMillis()
     )
 
-    fun getAdminRewards(): List<AdminReward> {
-        val raw = prefs.getString(KEY_ADMIN_REWARDS, null) ?: return emptyList()
+    fun getAdRewards(): List<AdReward> {
+        val raw = prefs.getString(KEY_AD_REWARDS, null) ?: return emptyList()
         return try {
             val arr = JSONArray(raw)
-            val list = mutableListOf<AdminReward>()
+            val list = mutableListOf<AdReward>()
             for (i in 0 until arr.length()) {
                 val obj = arr.getJSONObject(i)
                 list.add(
-                    AdminReward(
+                    AdReward(
                         id = obj.getString("id"),
                         title = obj.getString("title"),
-                        note = obj.optString("note", "Granted by Admin"),
+                        type = obj.optString("type", "Ad Reward"),
                         timestamp = obj.optLong("timestamp", System.currentTimeMillis())
                     )
                 )
@@ -155,12 +138,13 @@ class GamePreferences(context: Context) {
         }
     }
 
-    fun grantAdminReward(title: String, note: String = "Granted by Admin") {
-        val current = getAdminRewards().toMutableList()
-        val newReward = AdminReward(
-            id = "RWD-" + System.currentTimeMillis() % 100000,
+    fun addAdReward(title: String, type: String) {
+        adsWatchedCount += 1
+        val current = getAdRewards().toMutableList()
+        val newReward = AdReward(
+            id = "ADR-${System.currentTimeMillis() % 100000}",
             title = title,
-            note = note,
+            type = type,
             timestamp = System.currentTimeMillis()
         )
         current.add(0, newReward)
@@ -170,83 +154,60 @@ class GamePreferences(context: Context) {
                 val obj = JSONObject()
                 obj.put("id", r.id)
                 obj.put("title", r.title)
-                obj.put("note", r.note)
+                obj.put("type", r.type)
                 obj.put("timestamp", r.timestamp)
                 arr.put(obj)
             }
-            prefs.edit().putString(KEY_ADMIN_REWARDS, arr.toString()).apply()
+            prefs.edit().putString(KEY_AD_REWARDS, arr.toString()).apply()
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
-    fun getCustomAdminCodes(): Map<String, String> {
-        val map = GameConfig.INITIAL_ADMIN_CODES.toMutableMap()
-        val raw = prefs.getString(KEY_CUSTOM_CODES, null)
-        if (!raw.isNullOrEmpty()) {
-            try {
-                val obj = JSONObject(raw)
-                val keys = obj.keys()
-                while (keys.hasNext()) {
-                    val k = keys.next()
-                    map[k.uppercase()] = obj.getString(k)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-        return map
-    }
-
-    fun addCustomAdminCode(code: String, rewardTitle: String) {
-        val current = getCustomAdminCodes().toMutableMap()
-        current[code.uppercase().trim()] = rewardTitle.trim()
-        try {
-            val obj = JSONObject()
-            for ((k, v) in current) {
-                obj.put(k, v)
-            }
-            prefs.edit().putString(KEY_CUSTOM_CODES, obj.toString()).apply()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    fun isCodeRedeemed(code: String): Boolean {
-        val raw = prefs.getString(KEY_REDEEMED_CODES, null) ?: return false
+    fun getUnlockedThemesByAds(): Set<String> {
+        val raw = prefs.getString(KEY_UNLOCKED_THEMES_ADS, null) ?: return emptySet()
         return try {
             val arr = JSONArray(raw)
+            val set = mutableSetOf<String>()
             for (i in 0 until arr.length()) {
-                if (arr.getString(i).equals(code.trim(), ignoreCase = true)) {
-                    return true
-                }
+                set.add(arr.getString(i))
             }
-            false
+            set
         } catch (e: Exception) {
-            false
+            emptySet()
         }
     }
 
-    fun redeemAdminCode(code: String): String? {
-        val cleanCode = code.uppercase().trim()
-        if (isCodeRedeemed(cleanCode)) return null
-
-        val codes = getCustomAdminCodes()
-        val rewardTitle = codes[cleanCode] ?: return null
-
-        // Mark redeemed
+    fun unlockThemeByAd(themeStyle: GameConfig.ThemeStyle) {
+        val current = getUnlockedThemesByAds().toMutableSet()
+        current.add(themeStyle.name)
         try {
-            val raw = prefs.getString(KEY_REDEEMED_CODES, null)
-            val arr = if (raw != null) JSONArray(raw) else JSONArray()
-            arr.put(cleanCode)
-            prefs.edit().putString(KEY_REDEEMED_CODES, arr.toString()).apply()
+            val arr = JSONArray()
+            current.forEach { arr.put(it) }
+            prefs.edit().putString(KEY_UNLOCKED_THEMES_ADS, arr.toString()).apply()
+            addAdReward("Unlocked ${themeStyle.displayName} Theme", "Theme")
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
 
-        // Grant reward
-        grantAdminReward(rewardTitle, "Redeemed with Code: $cleanCode")
-        return rewardTitle
+    fun grantLevelSkipTicket() {
+        levelSkipsAvailable += 1
+        addAdReward("+1 Level Skip Ticket", "Skip Ticket")
+    }
+
+    fun openMysteryChest(): String {
+        val chestRewards = listOf(
+            "👑 Diamond Solver Crown",
+            "⚡ Lightning Speed Badge",
+            "🛡️ Master Shield Trophy",
+            "🌟 Golden Star Medallion",
+            "🎯 Arrow Sharpshooter Ribbon",
+            "💎 Grandmaster Crystal Badge"
+        )
+        val selected = chestRewards.random()
+        addAdReward(selected, "Mystery Chest")
+        return selected
     }
 
     fun saveCustomLevel(level: CustomLevel) {

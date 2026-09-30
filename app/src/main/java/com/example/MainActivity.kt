@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.ads.AdMobManager
 import com.example.audio.SoundManager
+import com.example.config.GameConfig
 import com.example.data.GamePreferences
 import com.example.data.LevelsRepository
 import com.example.model.CustomLevel
@@ -26,8 +27,7 @@ import com.example.model.LevelData
 import com.example.model.LevelTier
 import com.example.ui.components.InterstitialAdDialog
 import com.example.ui.components.RewardedAdDialog
-import com.example.ui.screens.AdminPanelScreen
-import com.example.ui.screens.AdminRewardsScreen
+import com.example.ui.screens.AdRewardsScreen
 import com.example.ui.screens.CreateLevelScreen
 import com.example.ui.screens.GameplayScreen
 import com.example.ui.screens.HomeScreen
@@ -42,8 +42,7 @@ sealed interface Screen {
     data object Home : Screen
     data object LevelSelect : Screen
     data class Gameplay(val levelNumber: Int, val customLevelData: LevelData? = null) : Screen
-    data object Rewards : Screen
-    data object AdminPanel : Screen
+    data object AdRewards : Screen
     data object CreateLevel : Screen
     data object HowToPlay : Screen
     data object Settings : Screen
@@ -120,7 +119,7 @@ fun ArrowCubeApp(
                     currentScreen = Screen.LevelSelect
                 },
                 onRewardsClicked = {
-                    currentScreen = Screen.Rewards
+                    currentScreen = Screen.AdRewards
                 },
                 onCreateClicked = {
                     currentScreen = Screen.CreateLevel
@@ -137,23 +136,13 @@ fun ArrowCubeApp(
             )
         }
 
-        is Screen.Rewards -> {
+        is Screen.AdRewards -> {
             BackHandler { currentScreen = Screen.Home }
-            AdminRewardsScreen(
+            AdRewardsScreen(
                 preferences = preferences,
                 soundManager = soundManager,
                 adMobManager = adMobManager,
-                onBackClicked = { currentScreen = Screen.Home },
-                onOpenAdminPanel = { currentScreen = Screen.AdminPanel }
-            )
-        }
-
-        is Screen.AdminPanel -> {
-            BackHandler { currentScreen = Screen.Rewards }
-            AdminPanelScreen(
-                preferences = preferences,
-                soundManager = soundManager,
-                onBackClicked = { currentScreen = Screen.Rewards }
+                onBackClicked = { currentScreen = Screen.Home }
             )
         }
 

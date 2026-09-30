@@ -118,7 +118,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Admin Rewards Button
+                // Ad Rewards Button
                 CubicalButton(
                     text = "REWARDS",
                     onClick = {
@@ -361,9 +361,9 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 2.5 REWARDS (ADMIN)
+            // 2.5 AD REWARDS (Watch ads to earn rewards)
             CubicalButton(
-                text = "REWARDS (ADMIN)",
+                text = "AD REWARDS (WATCH & WIN)",
                 onClick = {
                     soundManager.playTap(preferences.isSoundEnabled)
                     onRewardsClicked()
@@ -372,7 +372,7 @@ fun HomeScreen(
                 bottomShadowColor = Color(0xFFD97706),
                 borderColor = Color(0xFF0F172A),
                 textColor = Color(0xFF0F172A),
-                fontSize = 16,
+                fontSize = 15,
                 icon = {
                     Icon(
                         imageVector = Icons.Default.CardGiftcard,
@@ -382,7 +382,7 @@ fun HomeScreen(
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
-                testTag = "menu_rewards_button"
+                testTag = "menu_ad_rewards_button"
             )
 
             Spacer(modifier = Modifier.height(14.dp))

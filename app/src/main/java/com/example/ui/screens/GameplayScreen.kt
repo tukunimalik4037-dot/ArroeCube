@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -22,9 +23,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -248,28 +251,68 @@ fun GameplayScreen(
                 )
             }
 
-            // Stars Badge
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(theme.surface)
-                    .border(1.5.dp, theme.surfaceBorder, RoundedCornerShape(14.dp))
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "Total Stars",
-                        tint = theme.accentGold,
-                        modifier = Modifier.size(15.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "${preferences.getTotalStars()}",
-                        color = theme.textPrimary,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 13.sp
-                    )
+                // Skip Ticket Button (if player has tickets won from ads)
+                if (preferences.levelSkipsAvailable > 0 && !isLevelComplete) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color(0xFF0284C7))
+                            .border(1.5.dp, Color(0xFF0F172A), RoundedCornerShape(14.dp))
+                            .clickable {
+                                preferences.levelSkipsAvailable--
+                                soundManager.playLevelWon(preferences.isSoundEnabled)
+                                preferences.completeLevel(levelData.levelNumber, movesCount.coerceAtLeast(1), 3)
+                                starsEarned = 3
+                                isLevelComplete = true
+                                Toast.makeText(context, "Level Skipped via Ad Ticket!", Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.FastForward,
+                                contentDescription = "Skip Level",
+                                tint = Color.White,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "SKIP (${preferences.levelSkipsAvailable})",
+                                color = Color.White,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+                }
+
+                // Stars Badge
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(theme.surface)
+                        .border(1.5.dp, theme.surfaceBorder, RoundedCornerShape(14.dp))
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "Total Stars",
+                            tint = theme.accentGold,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${preferences.getTotalStars()}",
+                            color = theme.textPrimary,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 13.sp
+                        )
+                    }
                 }
             }
         }
@@ -537,6 +580,36 @@ fun GameplayScreen(
                         modifier = Modifier.fillMaxWidth(),
                         testTag = "free_hint_button"
                     )
+
+                    // Option 3: Skip level using ticket won from ads
+                    if (preferences.levelSkipsAvailable > 0) {
+                        CubicalButton(
+                            text = "USE SKIP TICKET (${preferences.levelSkipsAvailable})",
+                            onClick = {
+                                preferences.levelSkipsAvailable--
+                                showHintDialog = false
+                                soundManager.playLevelWon(preferences.isSoundEnabled)
+                                preferences.completeLevel(levelData.levelNumber, movesCount.coerceAtLeast(1), 3)
+                                starsEarned = 3
+                                isLevelComplete = true
+                                Toast.makeText(context, "Level Skipped via Ad Ticket!", Toast.LENGTH_SHORT).show()
+                            },
+                            backgroundColor = Color(0xFF0284C7),
+                            bottomShadowColor = Color(0xFF0369A1),
+                            borderColor = Color(0xFF0F172A),
+                            textColor = Color.White,
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Default.FastForward,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            testTag = "use_skip_ticket_hint_dialog_button"
+                        )
+                    }
                 }
             }
         }

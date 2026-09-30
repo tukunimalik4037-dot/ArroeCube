@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 /**
  * Game configuration for ArrowCube.
- * Contains game constants, AdMob test IDs, coin economic balances, and themes.
+ * Contains game constants, AdMob IDs, ad rewards configuration, and themes.
  * Strictly flat colors, NO gradients.
  */
 object GameConfig {
@@ -21,17 +21,10 @@ object GameConfig {
     var ADS_ENABLED = true
     const val INTERSTITIAL_EVERY_N_LEVELS = 2
 
-    // Admin & Rewards configuration
-    const val DEFAULT_ADMIN_PIN = "7777"
-    const val ADMIN_CONTACT_EMAIL = "admin@arrowcube.game"
-    
-    // Built-in Admin Reward Promo Codes that grant official rewards
-    val INITIAL_ADMIN_CODES = mapOf(
-        "ADMIN2026" to "VIP Grandmaster Badge",
-        "LEVELWIN" to "Master Solver Certificate",
-        "ARROWPRO" to "Pro Arrow Stylist Badge",
-        "BONUSGIFT" to "Admin Special Star Chest"
-    )
+    // Ad Rewards configuration (Watch ads to earn rewards)
+    const val ADS_FOR_LEVEL_SKIP = 1
+    const val ADS_FOR_THEME_UNLOCK = 1
+    const val ADS_FOR_MYSTERY_CHEST = 1
 
     // Color Palettes (Flat solid vibrant colours only - strictly NO gradients)
     enum class ThemeStyle(val displayName: String) {

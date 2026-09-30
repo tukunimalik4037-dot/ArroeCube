@@ -326,7 +326,7 @@ fun HowToPlayScreen(
             RuleCard(
                 step = "4",
                 title = "Earn 3 Stars on Every Level",
-                description = "Clear all arrows without wasted blocked taps to earn a 3-star rating and qualify for special Admin rewards!",
+                description = "Clear all arrows without wasted blocked taps to earn a 3-star rating and maximize your mastery score!",
                 icon = Icons.Default.CheckCircle,
                 iconColor = theme.arrowUpColor,
                 theme = theme
