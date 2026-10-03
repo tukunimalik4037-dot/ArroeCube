@@ -62,6 +62,8 @@ import com.example.ui.components.ArrowCubeView
 import com.example.ui.components.CubicalButton
 import com.example.ui.components.CubicalCard
 import com.example.ui.components.CubicalIconButton
+import com.example.ui.components.ParticleEffectCanvas
+import com.example.ui.components.ParticleEmitter
 import kotlinx.coroutines.delay
 
 @Composable
@@ -101,6 +103,9 @@ fun GameplayScreen(
 
     val isOnline by adMobManager.isOnline.collectAsState()
 
+    // Particle emitter for color explosions on match
+    val particleEmitter = remember { ParticleEmitter() }
+
     // Handle cube tap logic
     fun onCubeTapped(cube: CubeCell) {
         if (isLevelComplete || flyingCubeId != null) return
@@ -120,6 +125,11 @@ fun GameplayScreen(
         if (pathIsClear) {
             // Success: cube launches off board!
             flyingCubeId = cube.id
+            particleEmitter.explode(
+                startX = context.resources.displayMetrics.widthPixels / 2f,
+                startY = context.resources.displayMetrics.heightPixels / 2.5f,
+                cubeColor = Color(0xFF38BDF8)
+            )
             soundManager.playFlySuccess(preferences.isSoundEnabled)
             soundManager.vibrateSuccess(preferences.isVibrationEnabled)
         } else {
@@ -201,12 +211,15 @@ fun GameplayScreen(
         showHintDialog = true
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(theme.background)
             .testTag("gameplay_screen")
     ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
         // Top Navigation & Stats Bar
         Row(
             modifier = Modifier
@@ -493,127 +506,134 @@ fun GameplayScreen(
         AdMobBannerView(adMobManager = adMobManager)
     }
 
-    // Hint Dialog Modal
-    if (showHintDialog) {
-        androidx.compose.ui.window.Dialog(
-            onDismissRequest = { showHintDialog = false }
+    // Particle effect canvas overlay inside root Box
+    ParticleEffectCanvas(
+        emitter = particleEmitter,
+        modifier = Modifier.fillMaxSize()
+    )
+}
+
+// Hint Dialog Modal
+if (showHintDialog) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = { showHintDialog = false }
+    ) {
+        CubicalCard(
+            backgroundColor = theme.surface,
+            borderColor = theme.accentGold,
+            shadowColor = theme.cubeShadow,
+            shadowDepth = 6.dp,
+            cornerRadius = 18.dp,
+            modifier = Modifier.fillMaxWidth().testTag("hint_options_dialog")
         ) {
-            CubicalCard(
-                backgroundColor = theme.surface,
-                borderColor = theme.accentGold,
-                shadowColor = theme.cubeShadow,
-                shadowDepth = 6.dp,
-                cornerRadius = 18.dp,
-                modifier = Modifier.fillMaxWidth().testTag("hint_options_dialog")
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Lightbulb,
-                        contentDescription = "Hint",
-                        tint = theme.accentGold,
-                        modifier = Modifier.size(36.dp)
-                    )
+                Icon(
+                    imageVector = Icons.Default.Lightbulb,
+                    contentDescription = "Hint",
+                    tint = theme.accentGold,
+                    modifier = Modifier.size(36.dp)
+                )
 
-                    Text(
-                        text = "NEED A HINT?",
-                        color = theme.textPrimary,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Black
-                    )
+                Text(
+                    text = "NEED A HINT?",
+                    color = theme.textPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Black
+                )
 
-                    Text(
-                        text = "A hint will highlight one arrow that is completely free to fly off right now.",
-                        color = theme.textSecondary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                Text(
+                    text = "A hint will highlight one arrow that is completely free to fly off right now.",
+                    color = theme.textSecondary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
+                )
 
-                    // Option 1: Watch Rewarded Ad for Free Hint
-                    if (isOnline && GameConfig.ADS_ENABLED) {
-                        CubicalButton(
-                            text = "WATCH AD (FREE HINT)",
-                            onClick = {
-                                showHintDialog = false
-                                adMobManager.showRewardedAd(
-                                    onRewardGranted = {
-                                        executeHint()
-                                    },
-                                    onAdUnavailable = { reason ->
-                                        Toast.makeText(context, reason, Toast.LENGTH_SHORT).show()
-                                        // Offline fallback if ad fails
-                                        executeHint()
-                                    }
-                                )
-                            },
-                            backgroundColor = Color(0xFF22C55E),
-                            bottomShadowColor = Color(0xFF15803D),
-                            borderColor = Color(0xFF0F172A),
-                            textColor = Color.White,
-                            icon = {
-                                Icon(
-                                    imageVector = Icons.Default.PlayCircle,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            testTag = "watch_ad_hint_button"
-                        )
-                    }
-
-                    // Option 2: Instant Free Hint
+                // Option 1: Watch Rewarded Ad for Free Hint
+                if (isOnline && GameConfig.ADS_ENABLED) {
                     CubicalButton(
-                        text = "FREE HINT",
+                        text = "WATCH AD (FREE HINT)",
                         onClick = {
                             showHintDialog = false
-                            executeHint()
+                            adMobManager.showRewardedAd(
+                                onRewardGranted = {
+                                    executeHint()
+                                },
+                                onAdUnavailable = { reason ->
+                                    Toast.makeText(context, reason, Toast.LENGTH_SHORT).show()
+                                    // Offline fallback if ad fails
+                                    executeHint()
+                                }
+                            )
                         },
-                        backgroundColor = theme.arrowUpColor,
-                        bottomShadowColor = Color(0xFF0284C7),
+                        backgroundColor = Color(0xFF22C55E),
+                        bottomShadowColor = Color(0xFF15803D),
                         borderColor = Color(0xFF0F172A),
                         textColor = Color.White,
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.PlayCircle,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth(),
-                        testTag = "free_hint_button"
+                        testTag = "watch_ad_hint_button"
                     )
+                }
 
-                    // Option 3: Skip level using ticket won from ads
-                    if (preferences.levelSkipsAvailable > 0) {
-                        CubicalButton(
-                            text = "USE SKIP TICKET (${preferences.levelSkipsAvailable})",
-                            onClick = {
-                                preferences.levelSkipsAvailable--
-                                showHintDialog = false
-                                soundManager.playLevelWon(preferences.isSoundEnabled)
-                                preferences.completeLevel(levelData.levelNumber, movesCount.coerceAtLeast(1), 3)
-                                starsEarned = 3
-                                isLevelComplete = true
-                                Toast.makeText(context, "Level Skipped via Ad Ticket!", Toast.LENGTH_SHORT).show()
-                            },
-                            backgroundColor = Color(0xFF0284C7),
-                            bottomShadowColor = Color(0xFF0369A1),
-                            borderColor = Color(0xFF0F172A),
-                            textColor = Color.White,
-                            icon = {
-                                Icon(
-                                    imageVector = Icons.Default.FastForward,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            testTag = "use_skip_ticket_hint_dialog_button"
-                        )
-                    }
+                // Option 2: Instant Free Hint
+                CubicalButton(
+                    text = "FREE HINT",
+                    onClick = {
+                        showHintDialog = false
+                        executeHint()
+                    },
+                    backgroundColor = theme.arrowUpColor,
+                    bottomShadowColor = Color(0xFF0284C7),
+                    borderColor = Color(0xFF0F172A),
+                    textColor = Color.White,
+                    modifier = Modifier.fillMaxWidth(),
+                    testTag = "free_hint_button"
+                )
+
+                // Option 3: Skip level using ticket won from ads
+                if (preferences.levelSkipsAvailable > 0) {
+                    CubicalButton(
+                        text = "USE SKIP TICKET (${preferences.levelSkipsAvailable})",
+                        onClick = {
+                            preferences.levelSkipsAvailable--
+                            showHintDialog = false
+                            soundManager.playLevelWon(preferences.isSoundEnabled)
+                            preferences.completeLevel(levelData.levelNumber, movesCount.coerceAtLeast(1), 3)
+                            starsEarned = 3
+                            isLevelComplete = true
+                            Toast.makeText(context, "Level Skipped via Ad Ticket!", Toast.LENGTH_SHORT).show()
+                        },
+                        backgroundColor = Color(0xFF0284C7),
+                        bottomShadowColor = Color(0xFF0369A1),
+                        borderColor = Color(0xFF0F172A),
+                        textColor = Color.White,
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.FastForward,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        testTag = "use_skip_ticket_hint_dialog_button"
+                    )
                 }
             }
         }
     }
+}
 
     // Level Complete Dialog
     if (isLevelComplete) {
